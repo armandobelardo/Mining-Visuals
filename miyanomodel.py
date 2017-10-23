@@ -38,12 +38,13 @@ def miyano(vars, t, K, xn, neighbors):
     for i in range(N):
         for n in range(D):
             # Nth degree of freedom for datapoint i
-            dphis[curr] = xn[i,n] + K * np.average(np.sin(diffs(vars[(int)(i/N):(int)((i/N)+N)],
-                                                                neighbors[i], i)))
+            dphis[curr] = xn[i,n] + K * np.average(
+                                            np.sin(
+                                                diffs(vars[(int)(i/N):(int)((i/N)+N)],
+                                                neighbors[i], i)))
             curr += 1
     return dphis
 
-# TODO(iamabel): fix simulate
 def simulate(trange, phis, K, xn, neighbors):
     # Note that odeint expects a 1D array, so we flatten by column. It also
     # outputs a 1D array, so we flatten the output (traditionally) as well
@@ -56,7 +57,7 @@ def simulate(trange, phis, K, xn, neighbors):
         plt.figure(i)
         for n in range(D):
             plt.plot(trange, results[:,D*n + i])
-            
+
     return results
 
 '''

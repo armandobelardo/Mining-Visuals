@@ -48,14 +48,15 @@ def simulate(trange, phis, K, xn, neighbors):
     # Note that odeint expects a 1D array, so we flatten by column. It also
     # outputs a 1D array, so we flatten the output (traditionally) as well
     results = odeint(miyano, phis.flatten('F'), trange, args=(K, xn, neighbors))
-    # print("shape of results matrix:", results.shape)
-    # print("shape of trange matrix:", trange.shape)
-    # {
-    #     plt.figure(i)
-    #     {
-    #         plt.plot(trange, results[i, j])
-    #     }
-    # }
+    (N, D) = size(*xn.shape)
+    print("shape of results matrix:", results.shape)
+    print("shape of trange matrix:", trange.shape)
+    print(results)
+    for i in range(N):
+        plt.figure(i)
+        for n in range(D):
+            plt.plot(trange, results[:,D*n + i])
+            
     return results
 
 '''
@@ -65,8 +66,8 @@ synchrony and plots the results.
 '''
 if __name__ == '__main__':
     # TODO(iamabel): Make these input
-    phis = np.arange(4).reshape(4,1) # Initial phi measures
-    xn = np.arange(4).reshape(4,1)   # Degrees of freedom
+    phis = np.arange(8).reshape(4,2) # Initial phi measures
+    xn = np.arange(8).reshape(4,2)   # Degrees of freedom
 
     # TODO(iamabel): Dynamically adjust K and alpha based on synchronization.
     K = 1

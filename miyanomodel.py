@@ -9,6 +9,7 @@ from matplotlib import pyplot as plt
 MARGIN_ERR = .01
 
 def isSynchronized(neighborhoods, phis, results, D):
+    # TODO(iamabel): Would we need to mod 2pi here to get true phase locking
     # for neighbor_i, neighborhood_i in enumerate(neighborhoods):
     #     d_ijs = []
     #     for neighbor_j in neighborhood_i:

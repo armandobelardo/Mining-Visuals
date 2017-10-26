@@ -5,7 +5,19 @@ import numpy as np
 from scipy.integrate import odeint
 from matplotlib import pyplot as plt
 
-# Fix to awkward numpy return
+# TODO(iamabel): figure out what is the actual convergence criteria.
+MARGIN_ERR = .01
+
+def isSynchronized(neighborhoods, phis, results, D):
+    # for neighborhood in neighborhoods:
+    #     d_ijs = []
+    #     for neighbor in neighborhood:
+    #         d_ijs.append(np.linalg.norm(np.subtract(phis[neighborhood, :, D], phis[neighbor, :, D])))
+    #     sigma_is.append(np.average(d_ijs))
+    # return np.average(sigma_is) < MARGIN_ERR
+    return True
+
+# To fix to awkward numpy return.
 def size(height=0, width=0):
     return (height, width)
 
@@ -61,7 +73,7 @@ def simulate(trange, phis, K, xn, neighbors):
     return results
 
 '''
-int[][] -> void
+(int[][]) -> void
 Takes in degrees of freedom from data, finds the optimal conditions for
 synchrony and plots the results.
 '''
@@ -69,6 +81,7 @@ if __name__ == '__main__':
     # TODO(iamabel): Make these input
     phis = np.arange(8).reshape(4,2) # Initial phi measures
     xn = np.arange(8).reshape(4,2)   # Degrees of freedom
+    N, D = size(*xn.shape)
 
     # TODO(iamabel): Dynamically adjust K and alpha based on synchronization.
     K = 1
@@ -77,10 +90,14 @@ if __name__ == '__main__':
     trange = np.linspace(0, 100, 300)
     neighbors = neighbors(xn, alpha)
 
-    r = simulate(trange, phis, K, xn, neighbors)
-    # Now restart the simulation from where you left off
-    phis = r[-1,:]
-    r = simulate(trange, phis, K, xn, neighbors)
+    while True: # emmulate do while
+        r = simulate(trange, phis, K, xn, neighbors)
+        # Now restart the simulation from where you left off
+        phis = r[-1,:]
+        r = simulate(trange, phis, K, xn, neighbors)
+
+        if isSynchronized(neighbors, phis, r, D):
+            break;
 
     print("Close the plot window to end the script")
     plt.show()

@@ -5,19 +5,20 @@ import numpy as np
 from scipy.integrate import odeint
 from matplotlib import pyplot as plt
 
-# TODO(iamabel): figure out what is the actual convergence criteria.
+# TODO(iamabel): Finalize a realisitic margin of error.
 MARGIN_ERR = .01
 
 def isSynchronized(neighborhoods, phis, results, D):
-    # for neighborhood in neighborhoods:
+    # for neighbor_i, neighborhood_i in enumerate(neighborhoods):
     #     d_ijs = []
-    #     for neighbor in neighborhood:
-    #         d_ijs.append(np.linalg.norm(np.subtract(phis[neighborhood, :, D], phis[neighbor, :, D])))
+    #     for neighbor_j in neighborhood_i:
+    #         d_ijs.append(np.linalg.norm(np.subtract(phis[neighbor_i, :, D], phis[neighbor_j, :, D])))
     #     sigma_is.append(np.average(d_ijs))
+    #
     # return np.average(sigma_is) < MARGIN_ERR
     return True
 
-# To fix to awkward numpy return.
+# To fix awkward numpy return.
 def size(height=0, width=0):
     return (height, width)
 
@@ -44,30 +45,32 @@ def diffs(phis, neighbors, i):
 
 def miyano(vars, t, K, xn, neighbors):
     (N, D) = size(*xn.shape)
-    dphis = np.zeros(N*D)
-    curr = 0
+    dphis = np.zeros((N,D))
 
     for i in range(N):
         for n in range(D):
             # Nth degree of freedom for datapoint i
-            dphis[curr] = xn[i,n] + K * np.average(
+            dphis[i,n] = xn[i,n] + K * np.average(
                                             np.sin(
                                                 diffs(vars[(int)(i/N):(int)((i/N)+N)],
                                                 neighbors[i], i)))
-            curr += 1
-    return dphis
+    return dphis.flatten('F')
 
 def simulate(trange, phis, K, xn, neighbors):
-    # Note that odeint expects a 1D array, so we flatten by column. It also
-    # outputs a 1D array, so we flatten the output (traditionally) as well
+    # Note that odeint expects a 1D array, so we flatten by column in order to
+    # get all phis of a degree in sequence.  It also outputs a 1D array, so we
+    # flatten the output (traditionally) as well.
     results = odeint(miyano, phis.flatten('F'), trange, args=(K, xn, neighbors))
     (N, D) = size(*xn.shape)
     print("shape of results matrix:", results.shape)
     print("shape of trange matrix:", trange.shape)
-    print(results)
+    print("D: ", D)
     for i in range(N):
+        # Figure for all nodes
         plt.figure(i)
+        plt.clf() # Only visualize final simulation
         for n in range(D):
+            # Degree of freedom for i for all times
             plt.plot(trange, results[:,D*n + i])
 
     return results
@@ -82,9 +85,10 @@ if __name__ == '__main__':
     phis = np.arange(8).reshape(4,2) # Initial phi measures
     xn = np.arange(8).reshape(4,2)   # Degrees of freedom
     N, D = size(*xn.shape)
+    K = 1                            # Fix for a data set
 
-    # TODO(iamabel): Dynamically adjust K and alpha based on synchronization.
-    K = 1
+    # TODO(iamabel): Dynamically adjust alpha based on synchronization.
+    # Start small, increment, then take last alpha that is "synchronized" under margin of error
     alpha = 3
 
     trange = np.linspace(0, 100, 300)
@@ -96,6 +100,7 @@ if __name__ == '__main__':
         phis = r[-1,:]
         r = simulate(trange, phis, K, xn, neighbors)
 
+        # TODO(iamabel): Graph sigma over time in isSynchronized
         if isSynchronized(neighbors, phis, r, D):
             break;
 

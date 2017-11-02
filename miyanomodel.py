@@ -7,23 +7,28 @@ from matplotlib import pyplot as plt
 
 # TODO(iamabel): Finalize a realisitic margin of error.
 MARGIN_ERR = .01
+ALPHA_STEP = .1
 
-def isSynchronized(neighborhoods, phis, results, D):
-    # TODO(iamabel): Would we need to mod 2pi here to get true phase locking
-    # for neighbor_i, neighborhood_i in enumerate(neighborhoods):
-    #     d_ijs = []
-    #     for neighbor_j in neighborhood_i:
-    #         d_ijs.append(np.linalg.norm(np.subtract(phis[neighbor_i, :, D], phis[neighbor_j, :, D])))
-    #     sigma_is.append(np.average(d_ijs))
-    #
-    # return np.average(sigma_is) < MARGIN_ERR
-    return True
+def isSynchronized(neighborhoods, phis, D):
+    sigma_is = []
+    for neighbor_i, neighborhood_i in enumerate(neighborhoods):
+        d_ijs = []
+        if not neighborhood_i: # nan avoidance with no neighbor issue
+            d_ijs.append(0)
+        else:
+            for neighbor_j in neighborhood_i:
+                d_ijs.append(np.linalg.norm(
+                             np.remainder(np.subtract(phis[neighbor_i: -1: N], phis[neighbor_j: -1: N]),
+                                          2 * np.pi)))
+        sigma_is.append(np.average(d_ijs))
+
+    return np.average(sigma_is) < MARGIN_ERR
 
 # To fix awkward numpy return.
 def size(height=0, width=0):
     return (height, width)
 
-def neighbors(xn, alpha):
+def getNeighbors(xn, alpha):
     neighbors = []
     N = size(*xn.shape)[0]
     for i in range(N):
@@ -39,6 +44,8 @@ def neighbors(xn, alpha):
     return neighbors
 
 def diffs(phis, neighbors, i):
+    if not neighbors:
+        return 0
     diff = []
     for neighbor in neighbors:
         diff.append(phis[i] - phis[neighbor])
@@ -65,7 +72,7 @@ def simulate(trange, phis, K, xn, neighbors):
     (N, D) = size(*xn.shape)
     print("shape of results matrix:", results.shape)
     print("shape of trange matrix:", trange.shape)
-    print("D: ", D)
+
     for i in range(N):
         # Figure for all nodes
         plt.figure(i)
@@ -73,7 +80,6 @@ def simulate(trange, phis, K, xn, neighbors):
         for n in range(D):
             # Degree of freedom for i for all times
             plt.plot(trange, results[:,D*n + i])
-
     return results
 
 '''
@@ -83,27 +89,42 @@ synchrony and plots the results.
 '''
 if __name__ == '__main__':
     # TODO(iamabel): Make these input
-    phis = np.arange(8).reshape(4,2) # Initial phi measures
-    xn = np.arange(8).reshape(4,2)   # Degrees of freedom
+    in_phis = np.arange(8).reshape(4,2) # Initial phi measures
+    xn = np.arange(8).reshape(4,2)      # Degrees of freedom
     N, D = size(*xn.shape)
-    K = 1                            # Fix for a data set
+    # TODO(iamabel): Potentially adjust K
+    K = 1                               # Fix for a data set
 
-    # TODO(iamabel): Dynamically adjust alpha based on synchronization.
     # Start small, increment, then take last alpha that is "synchronized" under margin of error
-    alpha = 3
+    alpha = 0
 
+    phis = in_phis[:]
     trange = np.linspace(0, 100, 300)
-    neighbors = neighbors(xn, alpha)
+    neighbors = getNeighbors(xn, alpha)
 
-    while True: # emmulate do while
+    # TODO(iamabel): Graph sigma over time in isSynchronized
+    while True:
         r = simulate(trange, phis, K, xn, neighbors)
         # Now restart the simulation from where you left off
         phis = r[-1,:]
         r = simulate(trange, phis, K, xn, neighbors)
 
-        # TODO(iamabel): Graph sigma over time in isSynchronized
-        if isSynchronized(neighbors, phis, r, D):
-            break;
+        if not isSynchronized(neighbors, phis, D):
+            phis = in_phis[:]
+            alpha -= ALPHA_STEP
+            break
+
+        # Increment alpha and reset simulation
+        alpha += ALPHA_STEP
+        phis = in_phis[:]
+        neighbors = getNeighbors(xn, alpha)
+
+    # Resimulate to show last working alpha
+    # TODO(iamabel): Potentially only plot once
+    r = simulate(trange, phis, K, xn, neighbors)
+    # Now restart the simulation from where you left off
+    phis = r[-1,:]
+    r = simulate(trange, phis, K, xn, neighbors)
 
     print("Close the plot window to end the script")
     plt.show()

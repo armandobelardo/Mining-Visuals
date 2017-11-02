@@ -73,6 +73,7 @@ def simulate(trange, phis, K, xn, neighbors):
     print("shape of results matrix:", results.shape)
     print("shape of trange matrix:", trange.shape)
 
+    # TODO(iamabel): Consider plotting by neighborhood to see synchronization
     for i in range(N):
         # Figure for all nodes
         plt.figure(i)

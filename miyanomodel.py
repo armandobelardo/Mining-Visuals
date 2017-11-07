@@ -64,7 +64,7 @@ def miyano(vars, t, K, xn, neighbors):
                                                 neighbors[i], i)))
     return dphis.flatten('F')
 
-def simulate(trange, phis, K, xn, neighbors):
+def simulate(trange, phis, K, xn, neighbors, plot = False):
     # Note that odeint expects a 1D array, so we flatten by column in order to
     # get all phis of a degree in sequence.  It also outputs a 1D array, so we
     # flatten the output (traditionally) as well.
@@ -73,14 +73,17 @@ def simulate(trange, phis, K, xn, neighbors):
     print("shape of results matrix:", results.shape)
     print("shape of trange matrix:", trange.shape)
 
-    # TODO(iamabel): Consider plotting by neighborhood to see synchronization
-    for i in range(N):
-        # Figure for all nodes
-        plt.figure(i)
-        plt.clf() # Only visualize final simulation
-        for n in range(D):
-            # Degree of freedom for i for all times
-            plt.plot(trange, results[:,D*n + i])
+    if plot:
+        for neighborhood_i, neighborhood in enumerate(neighbors):
+            plt.figure(neighborhood_i)
+            plt.clf()
+            # Our neighborhoods only contain neighbors, we need to add the node the
+            # neighborhood is around, neighborhood_i.
+            neighborhood += [neighborhood_i]
+            for i in neighborhood:
+                for n in range(D):
+                    # Degree of freedom for i for all times
+                    plt.plot(trange, results[:,D*n + i])
     return results
 
 '''
@@ -90,7 +93,7 @@ synchrony and plots the results.
 '''
 if __name__ == '__main__':
     # TODO(iamabel): Make these input
-    in_phis = np.arange(8).reshape(4,2) # Initial phi measures
+    phis_in = np.arange(8).reshape(4,2) # Initial phi measures
     xn = np.arange(8).reshape(4,2)      # Degrees of freedom
     N, D = size(*xn.shape)
     # TODO(iamabel): Potentially adjust K
@@ -99,33 +102,30 @@ if __name__ == '__main__':
     # Start small, increment, then take last alpha that is "synchronized" under margin of error
     alpha = 0
 
-    phis = in_phis[:]
+    phis = phis_in[:]
     trange = np.linspace(0, 100, 300)
-    neighbors = getNeighbors(xn, alpha)
 
     # TODO(iamabel): Graph sigma over time in isSynchronized
     while True:
+        neighbors = getNeighbors(xn, alpha)
+
         r = simulate(trange, phis, K, xn, neighbors)
         # Now restart the simulation from where you left off
         phis = r[-1,:]
         r = simulate(trange, phis, K, xn, neighbors)
 
         if not isSynchronized(neighbors, phis, D):
-            phis = in_phis[:]
-            alpha -= ALPHA_STEP
+            neighbors = getNeighbors(xn, alpha - ALPHA_STEP)
+            # Resimulate to show last working alpha
+            r = simulate(trange, phis_in[:], K, xn, neighbors)
+            # Now restart the simulation from where you left off
+            phis = r[-1,:]
+            r = simulate(trange, phis, K, xn, neighbors, True)
             break
 
         # Increment alpha and reset simulation
         alpha += ALPHA_STEP
-        phis = in_phis[:]
-        neighbors = getNeighbors(xn, alpha)
-
-    # Resimulate to show last working alpha
-    # TODO(iamabel): Potentially only plot once
-    r = simulate(trange, phis, K, xn, neighbors)
-    # Now restart the simulation from where you left off
-    phis = r[-1,:]
-    r = simulate(trange, phis, K, xn, neighbors)
+        phis = phis_in[:]
 
     print("Close the plot window to end the script")
     plt.show()

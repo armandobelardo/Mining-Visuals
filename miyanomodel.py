@@ -4,25 +4,28 @@ import numpy as np
 
 from scipy.integrate import odeint
 from matplotlib import pyplot as plt
-from clusters import create2Clustering
+from clusters import *
 
 # TODO(iamabel): Finalize a realisitic margin of error.
-MARGIN_ERR = .1
-ALPHA_STEP = .001
+MARGIN_ERR = .01
+K_STEP = 1
 
-def isSynchronized(neighborhoods, phis, D):
+def isSynchronized(thetas, alpha, K, xn, neighborhoods):
+    dthetas = miyano(thetas,[],K,xn,neighborhoods)
+
     sigma_is = []
     for neighbor_i, neighborhood_i in enumerate(neighborhoods):
         d_ijs = []
+        d_0 = alpha * np.linalg.norm(xn[neighbor_i, :])
+
         if not neighborhood_i: # nan avoidance with no neighbor issue
             d_ijs.append(0)
         else:
             for neighbor_j in neighborhood_i:
-                d_ijs.append(np.linalg.norm(
-                             np.remainder(np.subtract(phis[neighbor_i: -1: N], phis[neighbor_j: -1: N]),
-                                          2 * np.pi)))
+                d_ijs.append(np.linalg.norm(dthetas[neighbor_i:: N] - dthetas[neighbor_j:: N])/d_0)
         sigma_is.append(np.average(d_ijs))
 
+    print(np.average(sigma_is))
     return np.average(sigma_is) < MARGIN_ERR
 
 # To fix awkward numpy return.
@@ -42,35 +45,35 @@ def getNeighbors(xn, alpha):
                 if (d_ij <= d_0):
                     neighborhood.append(j)
         neighbors.append(neighborhood)
-    print("Found neighborhoods:", neighbors)
+
     return neighbors
 
-def diffs(phis, neighbors, i):
+def diffs(thetas, neighbors, i):
     if not neighbors:
         return 0
     diff = []
     for neighbor in neighbors:
-        diff.append(phis[i] - phis[neighbor])
+        diff.append(thetas[i] - thetas[neighbor])
     return diff
 
 def miyano(vars, t, K, xn, neighbors):
     (N, D) = size(*xn.shape)
-    dphis = np.zeros((N,D))
+    dthetas = np.zeros((N,D))
 
     for i in range(N):
         for n in range(D):
             # Nth degree of freedom for datapoint i
-            dphis[i,n] = xn[i,n] + K * np.average(
+            dthetas[i,n] = xn[i,n] + K * np.average(
                                             np.sin(
                                                 diffs(vars[(int)(i/N):(int)((i/N)+N)],
                                                 neighbors[i], i)))
-    return dphis.flatten('F')
+    return dthetas.flatten('F')
 
-def simulate(trange, phis, K, xn, neighbors, plot = False):
+def simulate(trange, thetas, K, xn, neighbors, plot = False):
     # Note that odeint expects a 1D array, so we flatten by column in order to
-    # get all phis of a degree in sequence.  It also outputs a 1D array, so we
+    # get all thetas of a degree in sequence.  It also outputs a 1D array, so we
     # flatten the output (traditionally) as well.
-    results = odeint(miyano, phis.flatten('F'), trange, args=(K, xn, neighbors))
+    results = odeint(miyano, thetas.flatten('F'), trange, args=(K, xn, neighbors))
     (N, D) = size(*xn.shape)
 
     if plot:
@@ -93,40 +96,35 @@ synchrony and plots the results.
 '''
 if __name__ == '__main__':
     # TODO(iamabel): Make these input
-    xn = create2Clustering(4,2)           # Degrees of freedom
-    K = 1                               # Input, fixed for a data set
+    # xn = create2Clustering(4,2)           # Degrees of freedom
+    xn = miyanoGrouping()
+    alpha = .5                              # Make input, fixed for a data set
 
     N, D = size(*xn.shape)
 
-    phis_in = np.random.randint(2 * np.pi, size = (N, D))
+    thetas_in = np.random.normal(0, 1, (N, D))
 
-    # Start small, increment, then take last alpha that is "synchronized" under margin of error
-    alpha = 0
 
-    phis = phis_in[:]
-    trange = np.linspace(0, 100, 300)
+    # Start small, increment, then take last K that is "synchronized" under margin of error
+    K = .4
+
+    thetas = thetas_in[:]
+    trange = np.linspace(0, 100, 2000)
+    neighbors = getNeighbors(xn, alpha)
 
     # TODO(iamabel): Graph sigma over time in isSynchronized
     while True:
-        neighbors = getNeighbors(xn, alpha)
-
-        r = simulate(trange, phis, K, xn, neighbors)
+        r = simulate(trange, thetas, K, xn, neighbors)
         # Now restart the simulation from where you left off
-        phis = r[-1,:]
-        r = simulate(trange, phis, K, xn, neighbors)
+        thetas = r[-1,:]
+        r = simulate(trange, thetas, K, xn, neighbors)
 
-        if not isSynchronized(neighbors, phis, D):
-            # neighbors = getNeighbors(xn, alpha - ALPHA_STEP)
-            # # Resimulate to show last working alpha
-            # r = simulate(trange, phis_in[:], K, xn, neighbors)
-            # # Now restart the simulation from where you left off
-            # phis = r[-1,:]
-            r = simulate(trange, phis, K, xn, neighbors, True)
+        if isSynchronized(thetas, alpha, K, xn, neighbors):
             break
 
         # Increment alpha and reset simulation
-        alpha += ALPHA_STEP
-        phis = phis_in[:]
+        K *= K_STEP
+        thetas = np.random.normal(0, 1, (N, D))
 
     print("Close the plot window to end the script")
     plt.show()

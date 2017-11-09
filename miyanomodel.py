@@ -4,10 +4,11 @@ import numpy as np
 
 from scipy.integrate import odeint
 from matplotlib import pyplot as plt
+from clusters import create2Clustering
 
 # TODO(iamabel): Finalize a realisitic margin of error.
-MARGIN_ERR = .01
-ALPHA_STEP = .1
+MARGIN_ERR = .1
+ALPHA_STEP = .001
 
 def isSynchronized(neighborhoods, phis, D):
     sigma_is = []
@@ -41,6 +42,7 @@ def getNeighbors(xn, alpha):
                 if (d_ij <= d_0):
                     neighborhood.append(j)
         neighbors.append(neighborhood)
+    print("Found neighborhoods:", neighbors)
     return neighbors
 
 def diffs(phis, neighbors, i):
@@ -70,8 +72,6 @@ def simulate(trange, phis, K, xn, neighbors, plot = False):
     # flatten the output (traditionally) as well.
     results = odeint(miyano, phis.flatten('F'), trange, args=(K, xn, neighbors))
     (N, D) = size(*xn.shape)
-    print("shape of results matrix:", results.shape)
-    print("shape of trange matrix:", trange.shape)
 
     if plot:
         for neighborhood_i, neighborhood in enumerate(neighbors):
@@ -93,11 +93,12 @@ synchrony and plots the results.
 '''
 if __name__ == '__main__':
     # TODO(iamabel): Make these input
-    phis_in = np.arange(8).reshape(4,2) # Initial phi measures
-    xn = np.arange(8).reshape(4,2)      # Degrees of freedom
+    xn = create2Clustering(4,1)           # Degrees of freedom
+    K = 1                               # Input, fixed for a data set
+
     N, D = size(*xn.shape)
-    # TODO(iamabel): Potentially adjust K
-    K = 1                               # Fix for a data set
+
+    phis_in = np.random.randint(2 * np.pi, size = (N, D))
 
     # Start small, increment, then take last alpha that is "synchronized" under margin of error
     alpha = 0
@@ -115,11 +116,11 @@ if __name__ == '__main__':
         r = simulate(trange, phis, K, xn, neighbors)
 
         if not isSynchronized(neighbors, phis, D):
-            neighbors = getNeighbors(xn, alpha - ALPHA_STEP)
-            # Resimulate to show last working alpha
-            r = simulate(trange, phis_in[:], K, xn, neighbors)
-            # Now restart the simulation from where you left off
-            phis = r[-1,:]
+            # neighbors = getNeighbors(xn, alpha - ALPHA_STEP)
+            # # Resimulate to show last working alpha
+            # r = simulate(trange, phis_in[:], K, xn, neighbors)
+            # # Now restart the simulation from where you left off
+            # phis = r[-1,:]
             r = simulate(trange, phis, K, xn, neighbors, True)
             break
 

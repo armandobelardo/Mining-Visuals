@@ -93,7 +93,7 @@ synchrony and plots the results.
 '''
 if __name__ == '__main__':
     # TODO(iamabel): Make these input
-    xn = create2Clustering(4,1)           # Degrees of freedom
+    xn = create2Clustering(4,2)           # Degrees of freedom
     K = 1                               # Input, fixed for a data set
 
     N, D = size(*xn.shape)

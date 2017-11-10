@@ -10,8 +10,11 @@ from clusters import *
 MARGIN_ERR = .01
 K_STEP = 1
 
-def isSynchronized(thetas, alpha, K, xn, neighborhoods):
-    dthetas = miyano(thetas,[],K,xn,neighborhoods)
+END_TRANGE = 100
+START_TRANGE = 0
+
+def isSynchronized(thetas_b, thetas_a, alpha, K, xn, neighborhoods):
+    dthetas = (thetas_b - thetas_a)/(END_TRANGE/2)
 
     sigma_is = []
     for neighbor_i, neighborhood_i in enumerate(neighborhoods):
@@ -25,7 +28,7 @@ def isSynchronized(thetas, alpha, K, xn, neighborhoods):
                 d_ijs.append(np.linalg.norm(dthetas[neighbor_i:: N] - dthetas[neighbor_j:: N])/d_0)
         sigma_is.append(np.average(d_ijs))
 
-    print(np.average(sigma_is))
+    print (np.average(sigma_is))
     return np.average(sigma_is) < MARGIN_ERR
 
 # To fix awkward numpy return.
@@ -102,29 +105,33 @@ if __name__ == '__main__':
 
     N, D = size(*xn.shape)
 
-    thetas_in = np.random.normal(0, 1, (N, D))
-
-
     # Start small, increment, then take last K that is "synchronized" under margin of error
     K = .4
 
-    thetas = thetas_in[:]
-    trange = np.linspace(0, 100, 2000)
+    thetas_b = np.random.normal(0, 1, (N, D))
+    thetas_a = thetas_b[:]
+    trange_b = np.linspace(START_TRANGE, END_TRANGE, 2000)
+    trange_a = np.linspace(START_TRANGE, END_TRANGE/2, 1000)
+
     neighbors = getNeighbors(xn, alpha)
 
     # TODO(iamabel): Graph sigma over time in isSynchronized
     while True:
-        r = simulate(trange, thetas, K, xn, neighbors)
+        r_b = simulate(trange_b, thetas_b, K, xn, neighbors)
+        r_a = simulate(trange_a, thetas_a, K, xn, neighbors)
         # Now restart the simulation from where you left off
-        thetas = r[-1,:]
-        r = simulate(trange, thetas, K, xn, neighbors)
+        thetas_b = r_b[-1,:]
+        thetas_a = r_a[-1,:]
+        r_b = simulate(trange_b, thetas_b, K, xn, neighbors)
+        r_a= simulate(trange_a, thetas_a, K, xn, neighbors)
 
-        if isSynchronized(thetas, alpha, K, xn, neighbors):
+        if isSynchronized(thetas_b, thetas_a, alpha, K, xn, neighbors):
             break
 
-        # Increment alpha and reset simulation
+        # Increment K and reset simulation
         K *= K_STEP
-        thetas = np.random.normal(0, 1, (N, D))
+        thetas_b = np.random.normal(0, 1, (N, D))
+        thetas_a = thetas_b[:]
 
     print("Close the plot window to end the script")
     plt.show()

@@ -28,7 +28,6 @@ def isSynchronized(thetas_b, thetas_a, alpha, K, xn, neighborhoods):
                 d_ijs.append(np.linalg.norm(dthetas[neighbor_i:: N] - dthetas[neighbor_j:: N])/d_0)
         sigma_is.append(np.average(d_ijs))
 
-    print (np.average(sigma_is))
     return np.average(sigma_is) < MARGIN_ERR
 
 # To fix awkward numpy return.
@@ -42,11 +41,11 @@ def getNeighbors(xn, alpha):
         neighborhood = []
         d_0 = alpha * np.linalg.norm(xn[i, :])
         for j in range(N): # potential neighbor check
-            if (i != j):
-                # Get the norm of the vector difference
-                d_ij = np.linalg.norm(np.subtract(xn[i, :], xn[j, :]))
-                if (d_ij <= d_0):
-                    neighborhood.append(j)
+            # if (i != j):
+            # Get the norm of the vector difference
+            d_ij = np.linalg.norm(np.subtract(xn[i, :], xn[j, :]))
+            if (d_ij <= d_0):
+                neighborhood.append(j)
         neighbors.append(neighborhood)
 
     return neighbors
@@ -70,28 +69,33 @@ def miyano(vars, t, K, xn, neighbors):
                                             np.sin(
                                                 diffs(vars[(int)(i/N):(int)((i/N)+N)],
                                                 neighbors[i], i)))
-    return dthetas.flatten('F')
+    return dthetas.flatten()
 
-def simulate(trange, thetas, K, xn, neighbors, plot = False):
+def simulate(trange, thetas, K, xn, neighbors):
     # Note that odeint expects a 1D array, so we flatten by column in order to
     # get all thetas of a degree in sequence.  It also outputs a 1D array, so we
     # flatten the output (traditionally) as well.
-    results = odeint(miyano, thetas.flatten('F'), trange, args=(K, xn, neighbors))
+    results = odeint(miyano, thetas, trange, args=(K, xn, neighbors))
     (N, D) = size(*xn.shape)
 
-    if plot:
-        for neighborhood_i, neighborhood in enumerate(neighbors):
+    return results
+
+def endplot(results, trange, neighbors):
+    # TODO(iamabel): Make a random array of colors of size D so that all
+    # degrees of freedom are the same color in and across graphs
+    colors = ['red', 'blue', 'green']
+
+    done_neighbors = []
+
+    for neighborhood_i, neighborhood in enumerate(neighbors):
+        if neighborhood not in done_neighbors:
             plt.figure(neighborhood_i)
             plt.clf()
-            # Our neighborhoods only contain neighbors, we need to add the node the
-            # neighborhood is around, neighborhood_i.
-            neighborhood += [neighborhood_i]
             for i in neighborhood:
                 for n in range(D):
                     # Degree of freedom for i for all times
-                    plt.plot(trange, results[:,D*n + i])
-    return results
-
+                    plt.plot(trange, results[:,n + i*D], colors[n])
+            done_neighbors.append(neighborhood)
 '''
 (int[][]) -> void
 Takes in degrees of freedom from data, finds the optimal conditions for
@@ -99,39 +103,34 @@ synchrony and plots the results.
 '''
 if __name__ == '__main__':
     # TODO(iamabel): Make these input
-    # xn = create2Clustering(4,2)           # Degrees of freedom
-    xn = miyanoGrouping()
-    alpha = .5                              # Make input, fixed for a data set
+    xn = miyanoGrouping()           # Degrees of freedom
+    alpha = .5                      # Make input, fixed for a data set
 
     N, D = size(*xn.shape)
 
     # Start small, increment, then take last K that is "synchronized" under margin of error
     K = .4
 
-    thetas_b = np.random.normal(0, 1, (N, D))
-    thetas_a = thetas_b[:]
-    trange_b = np.linspace(START_TRANGE, END_TRANGE, 2000)
-    trange_a = np.linspace(START_TRANGE, END_TRANGE/2, 1000)
+    thetas_b = np.random.normal(0, 1, (N*D))
+    trange = np.linspace(START_TRANGE, END_TRANGE, 2000)
 
     neighbors = getNeighbors(xn, alpha)
 
     # TODO(iamabel): Graph sigma over time in isSynchronized
     while True:
-        r_b = simulate(trange_b, thetas_b, K, xn, neighbors)
-        r_a = simulate(trange_a, thetas_a, K, xn, neighbors)
+        r = simulate(trange, thetas_b, K, xn, neighbors)
         # Now restart the simulation from where you left off
-        thetas_b = r_b[-1,:]
-        thetas_a = r_a[-1,:]
-        r_b = simulate(trange_b, thetas_b, K, xn, neighbors)
-        r_a= simulate(trange_a, thetas_a, K, xn, neighbors)
+        thetas_b = r[-1,:]
+        thetas_a = r[END_TRANGE//2,:]
 
-        if isSynchronized(thetas_b, thetas_a, alpha, K, xn, neighbors):
+        if not isSynchronized(thetas_b, thetas_a, alpha, K, xn, neighbors):
             break
 
         # Increment K and reset simulation
         K *= K_STEP
-        thetas_b = np.random.normal(0, 1, (N, D))
-        thetas_a = thetas_b[:]
+        thetas_b = np.random.normal(0, 1, (N*D))
+
+    r = endplot(r, trange, neighbors)
 
     print("Close the plot window to end the script")
     plt.show()

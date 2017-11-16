@@ -7,14 +7,14 @@ from matplotlib import pyplot as plt
 from clusters import *
 
 # TODO(iamabel): Finalize a realisitic margin of error.
-MARGIN_ERR = .01
+MARGIN_ERR = .1
 K_STEP = 1
 
 END_TRANGE = 100
 START_TRANGE = 0
 
-def isSynchronized(thetas_b, thetas_a, alpha, K, xn, neighborhoods):
-    dthetas = (thetas_b - thetas_a)/(END_TRANGE/2)
+def isSynchronized(thetas_b, alpha, K, xn, neighborhoods):
+    dthetas = miyano(thetas_b, [], K, xn, neighborhoods)
 
     sigma_is = []
     for neighbor_i, neighborhood_i in enumerate(neighborhoods):
@@ -25,9 +25,11 @@ def isSynchronized(thetas_b, thetas_a, alpha, K, xn, neighborhoods):
             d_ijs.append(0)
         else:
             for neighbor_j in neighborhood_i:
-                d_ijs.append(np.linalg.norm(dthetas[neighbor_i:: N] - dthetas[neighbor_j:: N])/d_0)
+                d_ijs.append(np.linalg.norm(dthetas[neighbor_i:neighbor_i+D] - dthetas[neighbor_j:neighbor_j+D])/d_0)
         sigma_is.append(np.average(d_ijs))
 
+    print(neighborhoods)
+    print(np.average(sigma_is))
     return np.average(sigma_is) < MARGIN_ERR
 
 # To fix awkward numpy return.
@@ -41,21 +43,22 @@ def getNeighbors(xn, alpha):
         neighborhood = []
         d_0 = alpha * np.linalg.norm(xn[i, :])
         for j in range(N): # potential neighbor check
-            # if (i != j):
             # Get the norm of the vector difference
             d_ij = np.linalg.norm(np.subtract(xn[i, :], xn[j, :]))
-            if (d_ij <= d_0):
+            if (d_ij <= d_0): # includes self
                 neighborhood.append(j)
         neighbors.append(neighborhood)
 
     return neighbors
 
+# Returns the differences of thetas (for a single degree of freedom) within a
+# single neighborhood.
 def diffs(thetas, neighbors, i):
     if not neighbors:
         return 0
     diff = []
     for neighbor in neighbors:
-        diff.append(thetas[i] - thetas[neighbor])
+        diff.append(thetas[neighbor] - thetas[i])
     return diff
 
 def miyano(vars, t, K, xn, neighbors):
@@ -64,26 +67,24 @@ def miyano(vars, t, K, xn, neighbors):
 
     for i in range(N):
         for n in range(D):
-            # Nth degree of freedom for datapoint i
+            # Using the nth degree of freedom for datapoint i.
             dthetas[i,n] = xn[i,n] + K * np.average(
                                             np.sin(
-                                                diffs(vars[(int)(i/N):(int)((i/N)+N)],
+                                                diffs(vars[n::D],
                                                 neighbors[i], i)))
     return dthetas.flatten()
 
 def simulate(trange, thetas, K, xn, neighbors):
-    # Note that odeint expects a 1D array, so we flatten by column in order to
-    # get all thetas of a degree in sequence.  It also outputs a 1D array, so we
-    # flatten the output (traditionally) as well.
-    results = odeint(miyano, thetas, trange, args=(K, xn, neighbors))
-    (N, D) = size(*xn.shape)
+    # Note that odeint expects a 1D array, so we flatten in order to get all
+    # degrees of freedom for a specific datapoint in sequence. Odeint also
+    # outputs a 1D array, so we flatten the output (traditionally) as well.
 
-    return results
+    return odeint(miyano, thetas, trange, args=(K, xn, neighbors))
 
-def endplot(results, trange, neighbors):
+def endplot(results, trange, neighbors, D):
     # TODO(iamabel): Make a random array of colors of size D so that all
     # degrees of freedom are the same color in and across graphs
-    colors = ['red', 'blue', 'green']
+    colors = "bgrcmykw"
 
     done_neighbors = []
 
@@ -94,8 +95,13 @@ def endplot(results, trange, neighbors):
             for i in neighborhood:
                 for n in range(D):
                     # Degree of freedom for i for all times
-                    plt.plot(trange, results[:,n + i*D], colors[n])
+                    plt.plot(trange, results[:,n + i*D], colors[n%len(colors)])
             done_neighbors.append(neighborhood)
+
+def get_cmap(n, name='hsv'):
+    '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct
+    RGB color; the keyword argument name must be a standard mpl colormap name.'''
+    return plt.cm.get_cmap(name, n)
 '''
 (int[][]) -> void
 Takes in degrees of freedom from data, finds the optimal conditions for
@@ -121,16 +127,15 @@ if __name__ == '__main__':
         r = simulate(trange, thetas_b, K, xn, neighbors)
         # Now restart the simulation from where you left off
         thetas_b = r[-1,:]
-        thetas_a = r[END_TRANGE//2,:]
 
-        if not isSynchronized(thetas_b, thetas_a, alpha, K, xn, neighbors):
+        if not isSynchronized(thetas_b, alpha, K, xn, neighbors):
             break
 
         # Increment K and reset simulation
         K *= K_STEP
         thetas_b = np.random.normal(0, 1, (N*D))
 
-    r = endplot(r, trange, neighbors)
+    r = endplot(r, trange, neighbors, D)
 
     print("Close the plot window to end the script")
     plt.show()

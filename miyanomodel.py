@@ -98,10 +98,6 @@ def endplot(results, trange, neighbors, D):
                     plt.plot(trange, results[:,n + i*D], colors[n%len(colors)])
             done_neighbors.append(neighborhood)
 
-def get_cmap(n, name='hsv'):
-    '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct
-    RGB color; the keyword argument name must be a standard mpl colormap name.'''
-    return plt.cm.get_cmap(name, n)
 '''
 (int[][]) -> void
 Takes in degrees of freedom from data, finds the optimal conditions for

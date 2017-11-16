@@ -6,7 +6,6 @@ from scipy.integrate import odeint
 from matplotlib import pyplot as plt
 from clusters import *
 
-# TODO(iamabel): Finalize a realisitic margin of error.
 MARGIN_ERR = .1
 K_STEP = 1
 
@@ -25,11 +24,8 @@ def isSynchronized(thetas_b, alpha, K, xn, neighborhoods):
             d_ijs.append(0)
         else:
             for neighbor_j in neighborhood_i:
-                d_ijs.append(np.linalg.norm(dthetas[neighbor_i:neighbor_i+D] - dthetas[neighbor_j:neighbor_j+D])/d_0)
+                d_ijs.append(np.linalg.norm(dthetas[neighbor_i*D:(neighbor_i*D)+D] - dthetas[neighbor_j*D:(neighbor_j*D)+D])/d_0)
         sigma_is.append(np.average(d_ijs))
-
-    print(neighborhoods)
-    print(np.average(sigma_is))
     return np.average(sigma_is) < MARGIN_ERR
 
 # To fix awkward numpy return.
@@ -42,9 +38,11 @@ def getNeighbors(xn, alpha):
     for i in range(N):
         neighborhood = []
         d_0 = alpha * np.linalg.norm(xn[i, :])
+        print(str(i)+":", d_0)
         for j in range(N): # potential neighbor check
             # Get the norm of the vector difference
             d_ij = np.linalg.norm(np.subtract(xn[i, :], xn[j, :]))
+            print("\t"+str(i)+","+str(j)+":", d_ij)
             if (d_ij <= d_0): # includes self
                 neighborhood.append(j)
         neighbors.append(neighborhood)
@@ -82,8 +80,6 @@ def simulate(trange, thetas, K, xn, neighbors):
     return odeint(miyano, thetas, trange, args=(K, xn, neighbors))
 
 def endplot(results, trange, neighbors, D):
-    # TODO(iamabel): Make a random array of colors of size D so that all
-    # degrees of freedom are the same color in and across graphs
     colors = "bgrcmykw"
 
     done_neighbors = []
@@ -117,14 +113,17 @@ if __name__ == '__main__':
     trange = np.linspace(START_TRANGE, END_TRANGE, 2000)
 
     neighbors = getNeighbors(xn, alpha)
+    print("Neighborhoods are:", neighbors)
 
     # TODO(iamabel): Graph sigma over time in isSynchronized
+    # TODO(iamabel): Make d_0 global and the norm of the norms of the degrees
+    # of freedom
     while True:
         r = simulate(trange, thetas_b, K, xn, neighbors)
         # Now restart the simulation from where you left off
         thetas_b = r[-1,:]
 
-        if not isSynchronized(thetas_b, alpha, K, xn, neighbors):
+        if isSynchronized(thetas_b, alpha, K, xn, neighbors):
             break
 
         # Increment K and reset simulation
@@ -135,6 +134,3 @@ if __name__ == '__main__':
 
     print("Close the plot window to end the script")
     plt.show()
-
-    data = np.column_stack([r, trange])
-    np.savetxt('miyano.dat', data)

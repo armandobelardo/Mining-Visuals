@@ -3,6 +3,7 @@ from __future__ import print_function   # <- in case using Python 2.x
 import numpy as np
 
 from scipy.integrate import odeint
+from matplotlib.patches import Rectangle
 from matplotlib import pyplot as plt
 from clusters import *
 
@@ -81,18 +82,23 @@ def simulate(trange, thetas, K, xn, neighbors):
 
 def endplot(results, trange, neighbors, D):
     colors = "bgrcmykw"
-
     done_neighbors = []
+
+    # Make a legend
+    handles = [Rectangle((0,0),1,1, color=colors[n%len(colors)]) for n in range(D)]
+    labels = ["Degree " + str(n) for n in range(D)]
 
     for neighborhood_i, neighborhood in enumerate(neighbors):
         if neighborhood not in done_neighbors:
-            plt.figure(neighborhood_i)
+            fig = plt.figure(neighborhood_i)
             plt.clf()
             for i in neighborhood:
                 for n in range(D):
                     # Degree of freedom for i for all times
                     plt.plot(trange, results[:,n + i*D], colors[n%len(colors)])
             done_neighbors.append(neighborhood)
+            fig.suptitle("Group: "+','.join(map(str, neighborhood)), fontsize=14, fontweight='bold')
+            plt.legend(handles, labels)
 
 '''
 (int[][]) -> void

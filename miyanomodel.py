@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 from datagen import *
 
 MARGIN_ERR = .1
-K_STEP = 1
+K_STEP = 2
 
 END_TRANGE = 100
 START_TRANGE = 0
@@ -39,11 +39,9 @@ def getNeighbors(xn, alpha):
     for i in range(N):
         neighborhood = []
         d_0 = alpha * np.linalg.norm(xn[i, :])
-        print(str(i)+":", d_0)
         for j in range(N): # potential neighbor check
             # Get the norm of the vector difference
             d_ij = np.linalg.norm(np.subtract(xn[i, :], xn[j, :]))
-            print("\t"+str(i)+","+str(j)+":", d_ij)
             if (d_ij <= d_0): # includes self
                 neighborhood.append(j)
         neighbors.append(neighborhood)
@@ -107,7 +105,7 @@ synchrony and plots the results.
 '''
 if __name__ == '__main__':
     # TODO(iamabel): Make these input
-    xn = miyanoGrouping()           # Degrees of freedom
+    xn = flagData()           # Degrees of freedom
     alpha = .5                      # Make input, fixed for a data set
 
     N, D = size(*xn.shape)
@@ -119,11 +117,8 @@ if __name__ == '__main__':
     trange = np.linspace(START_TRANGE, END_TRANGE, 2000)
 
     neighbors = getNeighbors(xn, alpha)
-    print("Neighborhoods are:", neighbors)
 
     # TODO(iamabel): Graph sigma over time in isSynchronized
-    # TODO(iamabel): Make d_0 global and the norm of the norms of the degrees
-    # of freedom
     while True:
         r = simulate(trange, thetas_b, K, xn, neighbors)
         # Now restart the simulation from where you left off

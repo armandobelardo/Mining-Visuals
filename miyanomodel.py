@@ -106,37 +106,38 @@ Takes in degrees of freedom from data, finds the optimal conditions for
 synchrony and plots the results.
 '''
 if __name__ == '__main__':
-    # TODO(iamabel): Make these input
-    xn = miyanoGrouping()           # Degrees of freedom
-    alpha = .5                      # Make input, fixed for a data set
-
-    N, D = size(*xn.shape)
-
-    # Start small, increment, then take last K that is "synchronized" under margin of error
-    K = .4
-
-    thetas_b = np.random.normal(0, 1, (N*D))
-    trange = np.linspace(START_TRANGE, END_TRANGE, 2000)
-
-    neighbors = getNeighbors(xn, alpha)
-    print("Neighborhoods are:", neighbors)
-
-    # TODO(iamabel): Graph sigma over time in isSynchronized
-    # TODO(iamabel): Make d_0 global and the norm of the norms of the degrees
-    # of freedom
-    while True:
-        r = simulate(trange, thetas_b, K, xn, neighbors)
-        # Now restart the simulation from where you left off
-        thetas_b = r[-1,:]
-
-        if isSynchronized(thetas_b, alpha, K, xn, neighbors):
-            break
-
-        # Increment K and reset simulation
-        K *= K_STEP
-        thetas_b = np.random.normal(0, 1, (N*D))
-
-    r = endplot(r, trange, neighbors, D)
-
-    print("Close the plot window to end the script")
-    plt.show()
+    print(flagData()[0])
+    # # TODO(iamabel): Make these input
+    # xn = miyanoGrouping()           # Degrees of freedom
+    # alpha = .5                      # Make input, fixed for a data set
+    #
+    # N, D = size(*xn.shape)
+    #
+    # # Start small, increment, then take last K that is "synchronized" under margin of error
+    # K = .4
+    #
+    # thetas_b = np.random.normal(0, 1, (N*D))
+    # trange = np.linspace(START_TRANGE, END_TRANGE, 2000)
+    #
+    # neighbors = getNeighbors(xn, alpha)
+    # print("Neighborhoods are:", neighbors)
+    #
+    # # TODO(iamabel): Graph sigma over time in isSynchronized
+    # # TODO(iamabel): Make d_0 global and the norm of the norms of the degrees
+    # # of freedom
+    # while True:
+    #     r = simulate(trange, thetas_b, K, xn, neighbors)
+    #     # Now restart the simulation from where you left off
+    #     thetas_b = r[-1,:]
+    #
+    #     if isSynchronized(thetas_b, alpha, K, xn, neighbors):
+    #         break
+    #
+    #     # Increment K and reset simulation
+    #     K *= K_STEP
+    #     thetas_b = np.random.normal(0, 1, (N*D))
+    #
+    # r = endplot(r, trange, neighbors, D)
+    #
+    # print("Close the plot window to end the script")
+    # plt.show()

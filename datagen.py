@@ -28,4 +28,4 @@ def flagData():
     for i in range(len(locales)):
         print("\t"+str(i)+ ". "+locales[i])
 
-    return np.delete(flags, (0,17,28,29), axis=1)
+    return np.delete(flags, (0,17,28,29), axis=1).astype(float)

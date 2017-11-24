@@ -5,7 +5,7 @@ import numpy as np
 from scipy.integrate import odeint
 from matplotlib.patches import Rectangle
 from matplotlib import pyplot as plt
-from clusters import *
+from datagen import *
 
 MARGIN_ERR = .1
 K_STEP = 1

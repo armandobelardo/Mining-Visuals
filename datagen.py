@@ -23,6 +23,7 @@ def flagData():
     # Work around funky 'b' addition from numpy loadtxt
     flags = np.loadtxt(fname="datasets/flag.data", dtype=bytes, delimiter=',').astype(str)
     n, d = flags.shape
+    
     # Slice data for easier testing
     locales = flags[:n//15,0]
     flags = flags[:n//15, 7:28]

@@ -25,7 +25,10 @@ def isSynchronized(thetas_b, alpha, K, xn, neighborhoods):
             d_ijs.append(0)
         else:
             for neighbor_j in neighborhood_i:
-                d_ijs.append(np.linalg.norm(dthetas[neighbor_i*D:(neighbor_i*D)+D] - dthetas[neighbor_j*D:(neighbor_j*D)+D])/d_0)
+                d_ijs.append(np.linalg.norm(
+                                 dthetas[neighbor_i*D:(neighbor_i*D)+D] -
+                                 dthetas[neighbor_j*D:(neighbor_j*D)+D])
+                             /d_0)
         sigma_is.append(np.average(d_ijs))
 
     print(np.average(sigma_is))
@@ -80,6 +83,7 @@ def simulate(trange, thetas, K, xn, neighbors):
     return odeint(miyano, thetas, trange, args=(K, xn, neighbors))
 
 def endplot(results, trange, neighbors, D):
+    # TODO(iamabel): There needs to be a better way to do color.
     colors = "bgrcmykw"
     done_neighbors = []
 

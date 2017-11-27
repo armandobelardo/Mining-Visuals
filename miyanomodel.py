@@ -27,6 +27,8 @@ def isSynchronized(thetas_b, alpha, K, xn, neighborhoods):
             for neighbor_j in neighborhood_i:
                 d_ijs.append(np.linalg.norm(dthetas[neighbor_i*D:(neighbor_i*D)+D] - dthetas[neighbor_j*D:(neighbor_j*D)+D])/d_0)
         sigma_is.append(np.average(d_ijs))
+
+    print(np.average(sigma_is))
     return np.average(sigma_is) < MARGIN_ERR
 
 # To fix awkward numpy return.
@@ -75,7 +77,6 @@ def simulate(trange, thetas, K, xn, neighbors):
     # Note that odeint expects a 1D array, so we flatten in order to get all
     # degrees of freedom for a specific datapoint in sequence. Odeint also
     # outputs a 1D array, so we flatten the output (traditionally) as well.
-
     return odeint(miyano, thetas, trange, args=(K, xn, neighbors))
 
 def endplot(results, trange, neighbors, D):
@@ -105,8 +106,7 @@ synchrony and plots the results.
 '''
 if __name__ == '__main__':
     # TODO(iamabel): Make these input
-    xn = flagData()           # Degrees of freedom
-    alpha = .5                      # Make input, fixed for a data set
+    xn, alpha = flagData()           # Degrees of freedom
 
     N, D = size(*xn.shape)
 

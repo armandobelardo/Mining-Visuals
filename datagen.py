@@ -23,10 +23,10 @@ def flagData():
     # Work around funky 'b' addition from numpy loadtxt
     flags = np.loadtxt(fname="datasets/flag.data", dtype=bytes, delimiter=',').astype(str)
     n, d = flags.shape
-    
+
     # Slice data for easier testing
     locales = flags[:n//15,0]
-    flags = flags[:n//15, 7:28]
+    flags = flags[:n//15, 10:28]
     # flags = flags[:n//20, :]
     # locales = flags[:n//20,0]
 
@@ -35,4 +35,4 @@ def flagData():
         print("\t"+str(i)+ ". "+locales[i])
 
     # return np.delete(flags, (0,17,28,29), axis=1).astype(float), 1
-    return np.delete(flags, (10), axis=1).astype(float), 1
+    return np.delete(flags, (7), axis=1).astype(float), .75

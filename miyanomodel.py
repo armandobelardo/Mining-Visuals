@@ -31,7 +31,7 @@ def isSynchronized(thetas_b, alpha, K, xn, neighborhoods):
                              /d_0)
         sigma_is.append(np.average(d_ijs))
 
-    print(np.average(sigma_is))
+    print("sigma: " + str(np.average(sigma_is)) +  " for K: " + str(K))
     return np.average(sigma_is) < MARGIN_ERR
 
 # To fix awkward numpy return.
@@ -115,7 +115,7 @@ if __name__ == '__main__':
     N, D = size(*xn.shape)
 
     # Start small, increment, then take last K that is "synchronized" under margin of error
-    K = .4
+    K = 1.2
 
     thetas_b = np.random.normal(0, 1, (N*D))
     trange = np.linspace(START_TRANGE, END_TRANGE, 2000)

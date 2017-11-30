@@ -17,7 +17,7 @@ def miyanoGrouping():
     grouping[5:10, 1] += 1
     grouping[10:, 2] += 1
 
-    return grouping, .5
+    return grouping, .4
 
 def flagData():
     # Work around funky 'b' addition from numpy loadtxt
@@ -35,4 +35,4 @@ def flagData():
         print("\t"+str(i)+ ". "+locales[i])
 
     # return np.delete(flags, (0,17,28,29), axis=1).astype(float), 1
-    return np.delete(flags, (7), axis=1).astype(float), .75
+    return np.delete(flags, (7), axis=1).astype(float), 3.2

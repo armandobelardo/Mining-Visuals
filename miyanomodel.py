@@ -9,8 +9,8 @@ from matplotlib.patches import Rectangle
 from matplotlib import pyplot as plt
 from datagen import *
 
-MARGIN_ERR = .1
-K_STEP = 2
+MARGIN_ERR = 3e-10
+ALPHA_STEP = .1
 
 END_TRANGE = 100
 START_TRANGE = 0
@@ -33,7 +33,7 @@ def isSynchronized(thetas_b, alpha, K, xn, neighborhoods):
                              /d_0)
         sigma_is.append(np.average(d_ijs))
 
-    print("sigma: " + str(np.average(sigma_is)) +  " for K: " + str(K))
+    print("sigma: " + str(np.average(sigma_is)) +  " for alpha: " + str(alpha))
     return np.average(sigma_is)
 
 # To fix awkward numpy return.
@@ -123,11 +123,12 @@ def convert_to_hex(rgba_color) :
 def animateendnetwork(i, nodes, sigmas, N):
     color_map = []
     cmap = plt.get_cmap('Greens')
-    for i in range(N):
+    for j in range(N):
         rgba = cmap((i%len(sigmas))*3)
         color_map.append(convert_to_hex(rgba))
 
     # TODO(iamabel): Fix the color changing
+    print(color_map)
     nodes = nx.draw_networkx_nodes(G, pos, node_color=color_map)
 
     # Draw the network with node colors a shade of red pertaining to the
@@ -142,13 +143,13 @@ synchrony and plots the results.
 if __name__ == '__main__':
     # TODO(iamabel): Make these input
     # xn, alpha = flagData()           # Degrees of freedom
-    xn, alpha = miyanoGrouping()
+    xn, K = miyanoGrouping()
     sigmas = []
 
     N, D = size(*xn.shape)
 
     # Start small, increment, then take last K that is "synchronized" under margin of error
-    K = .1
+    alpha = .5
 
     thetas_b = np.random.normal(0, 1, (N*D))
     trange = np.linspace(START_TRANGE, END_TRANGE, 2000)
@@ -163,22 +164,24 @@ if __name__ == '__main__':
 
         sigmas.append(isSynchronized(thetas_b, alpha, K, xn, neighbors))
 
-        if sigmas[-1] < MARGIN_ERR:
+        if sigmas[-1] > MARGIN_ERR:
+            alpha -= ALPHA_STEP
+            neighbors = getNeighbors(xn, alpha)
             break
 
         # Increment K and reset simulation
-        K *= K_STEP
+        alpha += ALPHA_STEP
+        neighbors = getNeighbors(xn, alpha)
         thetas_b = np.random.normal(0, 1, (N*D))
 
-    # r = endplot(r, trange, neighbors, D)
-    G = nx.Graph()
-    G.add_edges_from(edgelist(neighbors))
-    pos = nx.circular_layout(G)
-    nodes = nx.draw_networkx_nodes(G, pos)
-    edges = nx.draw_networkx_edges(G, pos)
-
-    fig = plt.gcf()
-    a = animation.FuncAnimation(fig, animateendnetwork, fargs=(nodes, sigmas, N), frames=1000, interval=20, blit=True)
+    r = endplot(r, trange, neighbors, D)
+    # G = nx.Graph()
+    # G.add_edges_from(edgelist(neighbors))
+    # pos = nx.circular_layout(G)
+    # nodes = nx.draw_networkx_nodes(G, pos)
+    # edges = nx.draw_networkx_edges(G, pos)
+    #
+    # plt.gcf()
 
     print("Close the plot window to end the script")
     plt.show()

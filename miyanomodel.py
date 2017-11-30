@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 from __future__ import print_function   # <- in case using Python 2.x
 import numpy as np
+import networkx as nx
+import matplotlib.animation as animation
 
 from scipy.integrate import odeint
 from matplotlib.patches import Rectangle
@@ -32,7 +34,7 @@ def isSynchronized(thetas_b, alpha, K, xn, neighborhoods):
         sigma_is.append(np.average(d_ijs))
 
     print("sigma: " + str(np.average(sigma_is)) +  " for K: " + str(K))
-    return np.average(sigma_is) < MARGIN_ERR
+    return np.average(sigma_is)
 
 # To fix awkward numpy return.
 def size(height=0, width=0):
@@ -103,6 +105,35 @@ def endplot(results, trange, neighbors, D):
             fig.suptitle("Group: "+','.join(map(str, neighborhood)), fontsize=14, fontweight='bold')
             plt.legend(handles, labels)
 
+def edgelist(neighbors):
+    edges = []
+    for neighborhood_i, neighborhood in enumerate(neighbors):
+        for neighbor in neighborhood:
+            if neighbor != neighborhood_i:
+                edges.append((neighborhood_i, neighbor))
+
+    return edges
+
+def convert_to_hex(rgba_color) :
+    red = int(rgba_color[0]*255)
+    green = int(rgba_color[1]*255)
+    blue = int(rgba_color[2]*255)
+    return '#%02x%02x%02x' % (red, green, blue)
+
+def animateendnetwork(i, nodes, sigmas, N):
+    color_map = []
+    cmap = plt.get_cmap('Greens')
+    for i in range(N):
+        rgba = cmap((i%len(sigmas))*3)
+        color_map.append(convert_to_hex(rgba))
+
+    # TODO(iamabel): Fix the color changing
+    nodes = nx.draw_networkx_nodes(G, pos, node_color=color_map)
+
+    # Draw the network with node colors a shade of red pertaining to the
+    # level of synchrony (we mod since we want to loop for longer animation).
+    return nodes,
+
 '''
 (int[][]) -> void
 Takes in degrees of freedom from data, finds the optimal conditions for
@@ -110,12 +141,14 @@ synchrony and plots the results.
 '''
 if __name__ == '__main__':
     # TODO(iamabel): Make these input
-    xn, alpha = flagData()           # Degrees of freedom
+    # xn, alpha = flagData()           # Degrees of freedom
+    xn, alpha = miyanoGrouping()
+    sigmas = []
 
     N, D = size(*xn.shape)
 
     # Start small, increment, then take last K that is "synchronized" under margin of error
-    K = 1.2
+    K = .1
 
     thetas_b = np.random.normal(0, 1, (N*D))
     trange = np.linspace(START_TRANGE, END_TRANGE, 2000)
@@ -128,14 +161,24 @@ if __name__ == '__main__':
         # Now restart the simulation from where you left off
         thetas_b = r[-1,:]
 
-        if isSynchronized(thetas_b, alpha, K, xn, neighbors):
+        sigmas.append(isSynchronized(thetas_b, alpha, K, xn, neighbors))
+
+        if sigmas[-1] < MARGIN_ERR:
             break
 
         # Increment K and reset simulation
         K *= K_STEP
         thetas_b = np.random.normal(0, 1, (N*D))
 
-    r = endplot(r, trange, neighbors, D)
+    # r = endplot(r, trange, neighbors, D)
+    G = nx.Graph()
+    G.add_edges_from(edgelist(neighbors))
+    pos = nx.circular_layout(G)
+    nodes = nx.draw_networkx_nodes(G, pos)
+    edges = nx.draw_networkx_edges(G, pos)
+
+    fig = plt.gcf()
+    a = animation.FuncAnimation(fig, animateendnetwork, fargs=(nodes, sigmas, N), frames=1000, interval=20, blit=True)
 
     print("Close the plot window to end the script")
     plt.show()

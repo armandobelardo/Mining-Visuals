@@ -1,6 +1,6 @@
 import numpy as np
 
-def create2Clustering(N, D):
+def create2clustering(N, D):
     cluster = np.empty([N,D])
     for i in range(N):
         for j in range(D):
@@ -11,7 +11,7 @@ def create2Clustering(N, D):
 
     return cluster
 
-def miyanoGrouping():
+def miyanogrouping():
     grouping = np.random.normal(0, .1, (15,3))
     grouping[0:5, 0] += 1
     grouping[5:10, 1] += 1
@@ -19,7 +19,7 @@ def miyanoGrouping():
 
     return grouping, .4
 
-def flagData():
+def flagdata():
     # Work around funky 'b' addition from numpy loadtxt
     flags = np.loadtxt(fname="datasets/flag.data", dtype=bytes, delimiter=',').astype(str)
     n, d = flags.shape

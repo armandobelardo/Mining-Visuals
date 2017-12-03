@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 from __future__ import print_function   # <- in case using Python 2.x
-import numpy as np
 import networkx as nx
+import numpy as np
 import matplotlib.animation as animation
 
-from scipy.integrate import odeint
-from matplotlib.patches import Rectangle
-from matplotlib import pyplot as plt
 from datagen import *
+import matplotlib.pyplot as plt
+from scipy.integrate import odeint
+from viz import *
 
 MARGIN_ERR = 3e-10
 ALPHA_STEP = .1
@@ -84,56 +84,11 @@ def simulate(trange, thetas, K, xn, neighbors):
     # outputs a 1D array, so we flatten the output (traditionally) as well.
     return odeint(miyano, thetas, trange, args=(K, xn, neighbors))
 
-def endplot(results, trange, neighbors, D):
-    # TODO(iamabel): There needs to be a better way to do color.
-    colors = "bgrcmykw"
-    done_neighbors = []
-
-    # Make a legend
-    handles = [Rectangle((0,0),1,1, color=colors[n%len(colors)]) for n in range(D)]
-    labels = ["Degree " + str(n) for n in range(D)]
-
-    for neighborhood_i, neighborhood in enumerate(neighbors):
-        if neighborhood not in done_neighbors:
-            fig = plt.figure(neighborhood_i)
-            plt.clf()
-            for i in neighborhood:
-                for n in range(D):
-                    # Degree of freedom for i for all times
-                    plt.plot(trange, results[:,n + i*D], colors[n%len(colors)])
-            done_neighbors.append(neighborhood)
-            fig.suptitle("Group: "+','.join(map(str, neighborhood)), fontsize=14, fontweight='bold')
-            plt.legend(handles, labels)
-
-def edgelist(neighbors):
-    edges = []
-    for neighborhood_i, neighborhood in enumerate(neighbors):
-        for neighbor in neighborhood:
-            if neighbor != neighborhood_i:
-                edges.append((neighborhood_i, neighbor))
-
-    return edges
-
 def convert_to_hex(rgba_color) :
     red = int(rgba_color[0]*255)
     green = int(rgba_color[1]*255)
     blue = int(rgba_color[2]*255)
     return '#%02x%02x%02x' % (red, green, blue)
-
-def animateendnetwork(i, nodes, sigmas, N):
-    color_map = []
-    cmap = plt.get_cmap('Greens')
-    for j in range(N):
-        rgba = cmap((i%len(sigmas))*3)
-        color_map.append(convert_to_hex(rgba))
-
-    # TODO(iamabel): Fix the color changing
-    print(color_map)
-    nodes = nx.draw_networkx_nodes(G, pos, node_color=color_map)
-
-    # Draw the network with node colors a shade of red pertaining to the
-    # level of synchrony (we mod since we want to loop for longer animation).
-    return nodes,
 
 '''
 (int[][]) -> void
@@ -143,7 +98,7 @@ synchrony and plots the results.
 if __name__ == '__main__':
     # TODO(iamabel): Make these input
     # xn, alpha = flagData()           # Degrees of freedom
-    xn, K = miyanoGrouping()
+    xn, K = flagdata()
     sigmas = []
 
     N, D = size(*xn.shape)
@@ -175,13 +130,7 @@ if __name__ == '__main__':
         thetas_b = np.random.normal(0, 1, (N*D))
 
     r = endplot(r, trange, neighbors, D)
-    # G = nx.Graph()
-    # G.add_edges_from(edgelist(neighbors))
-    # pos = nx.circular_layout(G)
-    # nodes = nx.draw_networkx_nodes(G, pos)
-    # edges = nx.draw_networkx_edges(G, pos)
-    #
-    # plt.gcf()
+    flagplot(neighbors)
 
     print("Close the plot window to end the script")
     plt.show()

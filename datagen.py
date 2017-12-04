@@ -25,8 +25,8 @@ def flagdata():
     n, d = flags.shape
 
     # Slice data for easier testing
-    locales = flags[:n//15,0]
-    flags = flags[:n//15, 10:28]
+    locales = flags[:n//12,0]
+    flags = flags[:n//12, 10:28]
     # flags = flags[:n//20, :]
     # locales = flags[:n//20,0]
 

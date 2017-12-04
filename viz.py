@@ -9,8 +9,7 @@ def edgelist(neighbors):
     edges = []
     for neighborhood_i, neighborhood in enumerate(neighbors):
         for neighbor in neighborhood:
-            if neighbor != neighborhood_i:
-                edges.append((neighborhood_i, neighbor))
+            edges.append((neighborhood_i, neighbor))
 
     return edges
 
@@ -45,13 +44,12 @@ def flagplot(neighborhoods):
     assets.sort()
 
     for n in G:
-        print(n, assets[n])
         # Images from https://en.wikipedia.org/wiki/Gallery_of_sovereign_state_flags
         G.node[n]['image']=mpimg.imread(assets[n])
 
     pos=nx.spring_layout(G)
 
-    fig=plt.figure(figsize=(5,5))
+    fig=plt.figure(figsize=(7,7))
     ax=plt.gca()
     ax.set_aspect('equal')
     nx.draw_networkx_edges(G,pos,ax=ax)
@@ -59,7 +57,7 @@ def flagplot(neighborhoods):
     trans=ax.transData.transform
     trans2=fig.transFigure.inverted().transform
 
-    flagsize=0.2 # this is the image size
+    flagsize=0.1 # this is the image size
     f2=flagsize/2.0
     for n in G:
        xx,yy=trans(pos[n]) # figure coordinates
@@ -67,11 +65,8 @@ def flagplot(neighborhoods):
        a = plt.axes([xa-f2,ya-f2, flagsize, flagsize])
        a.set_aspect('equal')
        a.imshow(G.node[n]['image'])
-    #   a.axis('off')
        a.set_xticks([])
        a.set_yticks([])
     ax.axis('off')
-    #ax.set_xticks([])
-    #ax.set_yticks([])
 
     plt.show()

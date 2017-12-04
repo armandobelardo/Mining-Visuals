@@ -120,7 +120,7 @@ if __name__ == '__main__':
         sigmas.append(isSynchronized(thetas_b, alpha, K, xn, neighbors))
 
         if sigmas[-1] > MARGIN_ERR:
-            alpha -= ALPHA_STEP
+            # alpha -= ALPHA_STEP
             neighbors = getNeighbors(xn, alpha)
             break
 

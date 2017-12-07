@@ -9,7 +9,7 @@ def create2clustering(N, D):
             else:
                 cluster[i,j] = -1 - .05*np.random.rand()
 
-    return cluster
+    return cluster, .5
 
 def miyanogrouping():
     grouping = np.random.normal(0, .1, (15,3))

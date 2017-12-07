@@ -10,13 +10,14 @@ from scipy.integrate import odeint
 from viz import *
 
 MARGIN_ERR = 3e-10
-ALPHA_STEP = .1
+ALPHA_STEP = .05
 
 END_TRANGE = 100
 START_TRANGE = 0
 
 def isSynchronized(thetas_b, alpha, K, xn, neighborhoods):
     dthetas = miyano(thetas_b, [], K, xn, neighborhoods)
+    N, D = size(*xn.shape)
 
     sigma_is = []
     for neighbor_i, neighborhood_i in enumerate(neighborhoods):
@@ -33,8 +34,7 @@ def isSynchronized(thetas_b, alpha, K, xn, neighborhoods):
                              /d_0)
         sigma_is.append(np.average(d_ijs))
 
-    print("sigma: " + str(np.average(sigma_is)) +  " for alpha: " + str(alpha))
-    return np.average(sigma_is)
+    return np.average(sigma_is) < MARGIN_ERR
 
 # To fix awkward numpy return.
 def size(height=0, width=0):
@@ -97,14 +97,15 @@ synchrony and plots the results.
 '''
 if __name__ == '__main__':
     # TODO(iamabel): Make these input
-    # xn, alpha = flagData()           # Degrees of freedom
-    xn, K = flagdata()
+    # xn, K = flagdata()
+    # xn, K = create2clustering(12,3)
+    xn, K = miyanogrouping()
     sigmas = []
 
     N, D = size(*xn.shape)
 
     # Start small, increment, then take last K that is "synchronized" under margin of error
-    alpha = .5
+    alpha =  .5
 
     thetas_b = np.random.normal(0, 1, (N*D))
     trange = np.linspace(START_TRANGE, END_TRANGE, 2000)
@@ -117,10 +118,8 @@ if __name__ == '__main__':
         # Now restart the simulation from where you left off
         thetas_b = r[-1,:]
 
-        sigmas.append(isSynchronized(thetas_b, alpha, K, xn, neighbors))
-
-        if sigmas[-1] > MARGIN_ERR:
-            # alpha -= ALPHA_STEP
+        if not isSynchronized(thetas_b, alpha, K, xn, neighbors):
+            alpha -= ALPHA_STEP
             neighbors = getNeighbors(xn, alpha)
             break
 
@@ -128,9 +127,11 @@ if __name__ == '__main__':
         alpha += ALPHA_STEP
         neighbors = getNeighbors(xn, alpha)
         thetas_b = np.random.normal(0, 1, (N*D))
-
-    r = endplot(r, trange, neighbors, D)
-    flagplot(neighbors)
+    # TODO(iamabel): Get plots for poster.
+    # r = endplot(r, trange, neighbors, D)
+    # flagplot(neighbors)
+    netplot(neighbors)
+    # sigmaovertime(r, alpha, xn, neighbors, trange)
 
     print("Close the plot window to end the script")
     plt.show()

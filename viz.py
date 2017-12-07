@@ -2,8 +2,13 @@ import networkx as nx
 import os
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
+import numpy as np
 
 from matplotlib.patches import Rectangle
+
+# To fix awkward numpy return.
+def size(height=0, width=0):
+    return (height, width)
 
 def edgelist(neighbors):
     edges = []
@@ -33,6 +38,31 @@ def endplot(results, trange, neighbors, D):
             done_neighbors.append(neighborhood)
             fig.suptitle("Group: "+','.join(map(str, neighborhood)), fontsize=14, fontweight='bold')
             plt.legend(handles, labels)
+
+def sigmaovertime(alpha, xn, neighborhoods, trange):
+    N, D = size(*xn.shape)
+    sigma_is = []
+    sigmas = []
+
+    # TODO(iamabel): r needs to be theta dot but is theta
+    for dthetas in r:
+        for neighbor_i, neighborhood_i in enumerate(neighborhoods):
+            d_ijs = []
+            d_0 = alpha * np.linalg.norm(xn[neighbor_i, :])
+
+            if not neighborhood_i: # nan avoidance with no neighbor issue
+                d_ijs.append(0)
+            else:
+                for neighbor_j in neighborhood_i:
+                    d_ijs.append(np.linalg.norm(
+                                     dthetas[neighbor_i*D:(neighbor_i*D)+D] -
+                                     dthetas[neighbor_j*D:(neighbor_j*D)+D])
+                                 /d_0)
+            sigma_is.append(np.average(d_ijs))
+        print("sigma: " + str(np.average(sigma_is)) +  " for alpha: " + str(alpha))
+        sigmas.append(np.average(sigma_is))
+    plt.plot(trange, sigmas)
+    return False
 
 def flagplot(neighborhoods):
     G=nx.Graph(edgelist(neighborhoods))
@@ -69,4 +99,10 @@ def flagplot(neighborhoods):
        a.set_yticks([])
     ax.axis('off')
 
+    plt.show()
+
+def netplot(neighborhoods):
+    fig = plt.figure(77)
+    G = nx.Graph(edgelist(neighborhoods))
+    nx.draw_spring(G)
     plt.show()

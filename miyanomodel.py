@@ -97,10 +97,9 @@ synchrony and plots the results.
 '''
 if __name__ == '__main__':
     # TODO(iamabel): Make these input
-    # xn, K = flagdata()
+    xn, K = flagdata()
     # xn, K = create2clustering(12,3)
-    xn, K = miyanogrouping()
-    sigmas = []
+    # xn, K = miyanogrouping()
 
     N, D = size(*xn.shape)
 
@@ -119,7 +118,7 @@ if __name__ == '__main__':
         thetas_b = r[-1,:]
 
         if not isSynchronized(thetas_b, alpha, K, xn, neighbors):
-            alpha -= ALPHA_STEP
+            # alpha -= ALPHA_STEP
             neighbors = getNeighbors(xn, alpha)
             break
 
@@ -127,10 +126,10 @@ if __name__ == '__main__':
         alpha += ALPHA_STEP
         neighbors = getNeighbors(xn, alpha)
         thetas_b = np.random.normal(0, 1, (N*D))
-    # TODO(iamabel): Get plots for poster.
-    # r = endplot(r, trange, neighbors, D)
+
+    r = endplot(r, trange, neighbors, D)
     # flagplot(neighbors)
-    netplot(neighbors)
+    # netplot(neighbors)
     # sigmaovertime(r, alpha, xn, neighbors, trange)
 
     print("Close the plot window to end the script")
